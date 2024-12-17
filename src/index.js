@@ -12,7 +12,8 @@ app.use(cors({
   credentials:true,
     origin: [
     'http://localhost:3000', // for local development
-    'https://guitar-shop-frontend-brown.vercel.app' //frontend URL
+    'https://guitar-shop-frontend-brown.vercel.app', //frontend URL
+    'https://china-electronics-client.vercel.app'
   ]
 }));
 app.use(express.urlencoded({ extended: true }));
