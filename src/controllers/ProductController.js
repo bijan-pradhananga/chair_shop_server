@@ -157,6 +157,8 @@ class ProductController {
 
       // Check if the image exists in the product's images array
       const imagePath = `products\\${imageName}`; // Update based on your storage structure
+      console.log(imagePath);
+      
       const imageIndex = product.images.findIndex(img => img === imagePath);
       if (imageIndex === -1) {
         return res.status(404).json({ message: 'Image not found in the product.' });
