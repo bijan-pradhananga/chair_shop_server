@@ -141,46 +141,51 @@ class ProductController {
   async deleteImage(req, res) {
     try {
       const { id, imageName } = req.params;
-
+  
       // Find the product by ID
       const product = await Product.findById(id);
       if (!product) {
         return res.status(404).json({ message: 'Product not found' });
       }
-
+  
       // Ensure the product has more than one image
       if (product.images.length <= 1) {
         return res.status(400).json({
           message: 'Cannot delete the last remaining image of the product.',
         });
       }
-
-      // Check if the image exists in the product's images array
-      const imagePath = `products\\${imageName}`; // Update based on your storage structure
-      console.log(imagePath);
-      
-      const imageIndex = product.images.findIndex(img => img === imagePath);
+  
+      // Normalize the image path to use forward slashes
+      const imagePath = `products/${imageName}`; // Use forward slashes
+      const normalizedImages = product.images.map(image => image.replace(/\\/g, '/')); // Normalize all stored image paths
+  
+      console.log('Normalized Product Images:', normalizedImages); // Debug log
+      console.log('Image Path to Delete:', imagePath); // Debug log
+  
+      const imageIndex = normalizedImages.findIndex(img => img === imagePath);
       if (imageIndex === -1) {
         return res.status(404).json({ message: 'Image not found in the product.' });
       }
-
+  
       // Remove the image from the images array
       product.images.splice(imageIndex, 1);
-
+  
       // Delete the image file from the public folder
-      const fullImagePath = path.join(__dirname, '..', '..', 'public', imagePath); // Adjust to match your `public` folder structure
+      const fullImagePath = path.join(__dirname, '..', 'public', imagePath);
+      console.log('Full Image Path:', fullImagePath); // Debug log
       if (fs.existsSync(fullImagePath)) {
         fs.unlinkSync(fullImagePath);
       }
-
+  
       // Save the product with the updated images array
       await product.save();
-
+  
       res.status(200).json({ message: 'Image deleted successfully', product });
     } catch (err) {
       res.status(500).json({ message: err.message });
     }
   }
+  
 
   async search(req, res) {
     try {
