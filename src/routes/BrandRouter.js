@@ -5,6 +5,7 @@ const bInstance = new Brand();
 
 brandRouter.get('/', bInstance.index);
 brandRouter.post('/', bInstance.store);
+brandRouter.get('/search', bInstance.search);
 brandRouter.get('/:id', bInstance.show);
 brandRouter.put('/:id', bInstance.update);
 brandRouter.delete('/:id', bInstance.destroy);
