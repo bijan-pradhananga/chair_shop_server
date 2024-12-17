@@ -16,8 +16,6 @@ class BrandController {
     async store(req, res) {
         try {
             const brand = await Brand.create({ ...req.body });
-            console.log('Brand created successfully');
-            
             res.status(201).json({ message: 'Brand created successfully', data: brand });
         } catch (err) {
             if (err.name === 'ValidationError') {

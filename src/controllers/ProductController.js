@@ -27,9 +27,31 @@ class ProductController {
   // Get all products
   async index(req, res) {
     try {
-      const products = await Product.find().populate('category brand');
+      // Extract query parameters for pagination
+      const page = parseInt(req.query.page) || 1; // Default to page 1
+      const limit = parseInt(req.query.limit) || 10; // Default to 10 items per page
+
+      // Calculate the number of items to skip
+      const skip = (page - 1) * limit;
+
+      // Fetch paginated products 
+      const products = await Product.find()
+        .skip(skip) // Skip the first N results
+        .limit(limit) // Limit the number of results
+        .sort({ createdAt: -1 }) 
+        .populate('category', 'name') 
+        .populate('brand', 'name'); 
+
+      // Total count for all products
       const total = await Product.countDocuments();
-      res.status(200).json({ products, total });
+
+      // Send the response
+      res.status(200).json({
+        products,
+        total,
+        currentPage: page,
+        totalPages: Math.ceil(total / limit),
+      });
     } catch (err) {
       res.status(500).json({ message: err.message });
     }
@@ -55,12 +77,12 @@ class ProductController {
       if (!product) {
         return res.status(404).json({ message: 'Product not found' });
       }
-     
-      
+
+
       // Handle new image uploads
       if (req.files && req.files.length > 0) {
-       
-        
+
+
         // Combine existing and new images
         const newImages = req.files.map(file => file.path.replace('public\\', '').replace('public/', ''));
         const combinedImages = [...product.images, ...newImages];
@@ -160,27 +182,27 @@ class ProductController {
 
   async search(req, res) {
     try {
-        // Get the search query from the request's query parameters
-        const searchQuery = req.query.q || ''; 
+      // Get the search query from the request's query parameters
+      const searchQuery = req.query.q || '';
 
-        // Search products using regex to match product names (case insensitive)
-        const products = await Product.find({
-            name: { $regex: searchQuery, $options: 'i' }
-        })
+      // Search products using regex to match product names (case insensitive)
+      const products = await Product.find({
+        name: { $regex: searchQuery, $options: 'i' }
+      })
         .populate('category') // Populate the category field
         .populate('brand')    // Populate the brand field
         .sort({ createdAt: -1 }) // Sort by creation date (newest first)
         .limit(5); // Limit the result to 5
 
-        const total = await Product.countDocuments({
-            name: { $regex: searchQuery, $options: 'i' }
-        });
+      const total = await Product.countDocuments({
+        name: { $regex: searchQuery, $options: 'i' }
+      });
 
-        res.status(200).json({ products, total });
+      res.status(200).json({ products, total });
     } catch (err) {
-        res.status(500).json({ message: err.message });
+      res.status(500).json({ message: err.message });
     }
-}
+  }
 
 
 };
