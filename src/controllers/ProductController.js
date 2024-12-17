@@ -159,8 +159,8 @@ class ProductController {
       const imagePath = `products/${imageName}`; // Use forward slashes
       const normalizedImages = product.images.map(image => image.replace(/\\/g, '/')); // Normalize all stored image paths
   
-      console.log('Normalized Product Images:', normalizedImages); // Debug log
-      console.log('Image Path to Delete:', imagePath); // Debug log
+      // console.log('Normalized Product Images:', normalizedImages); // Debug log
+      // console.log('Image Path to Delete:', imagePath); // Debug log
   
       const imageIndex = normalizedImages.findIndex(img => img === imagePath);
       if (imageIndex === -1) {
