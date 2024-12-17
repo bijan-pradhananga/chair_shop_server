@@ -55,14 +55,12 @@ class CategoryController {
     async destroy(req, res) {
         try {
             // Check if the category is being used by any products
-            const productsUsingCategory = await Product.find({ categoryId: req.params.id });
-            console.log('fasfas');
+            const productsUsingCategory = await Product.findOne({ category: req.params.id });
             
-            if (productsUsingCategory.length > 0) {
+            if (productsUsingCategory) {
                 return res.status(400).json({ message: 'Category cannot be deleted as it is associated with products' });
             }
             const deletedCategory = await Category.findByIdAndDelete(req.params.id);
-            console.log('2');
             if (!deletedCategory) {
                 return res.status(404).json({ message: 'Category not found' });
             }
