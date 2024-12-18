@@ -12,7 +12,7 @@ app.use(cors({
   credentials: true,
   origin: [
     'http://localhost:3000', // for local development
-    process.env.FRONTEND_URL // for production
+    'https://china-electronics-client.vercel.app', // for production
   ]
 }));
 app.use(express.urlencoded({ extended: true }));
