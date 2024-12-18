@@ -9,11 +9,10 @@ require('dotenv').config();
 
 app.use(express.json());
 app.use(cors({
-  credentials:true,
-    origin: [
+  credentials: true,
+  origin: [
     'http://localhost:3000', // for local development
-    'https://guitar-shop-frontend-brown.vercel.app', //frontend URL
-    'https://china-electronics-client.vercel.app'
+    process.env.FRONTEND_URL // for production
   ]
 }));
 app.use(express.urlencoded({ extended: true }));
@@ -22,8 +21,8 @@ app.use(router);
 
 new Connection()
 
-app.get('/',(req,res)=>{
-    res.send('hello to china electronics server')
+app.get('/', (req, res) => {
+  res.send('hello to china electronics server')
 })
 
 app.listen(port, () => {
