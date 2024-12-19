@@ -30,22 +30,34 @@ class ProductController {
       // Extract query parameters for pagination
       const page = parseInt(req.query.page) || 1; // Default to page 1
       const limit = parseInt(req.query.limit) || 10; // Default to 10 items per page
-
-      // Calculate the number of items to skip
+      const sort = req.query.sort || 'def'; // Default to 'def' (latest products first)
+      
+      let sortQuery = {};
+      
+      // Determine sorting based on 'sort' query parameter
+      if (sort === 'asc') {
+        sortQuery = { price: 1 }; // Ascending order by price
+      } else if (sort === 'desc') {
+        sortQuery = { price: -1 }; // Descending order by price
+      } else {
+        sortQuery = { createdAt: -1 }; // Default to sorting by createdAt (latest products first)
+      }
+  
+      // Calculate the number of items to skip for pagination
       const skip = (page - 1) * limit;
-
-      // Fetch paginated products 
+  
+      // Fetch paginated and sorted products
       const products = await Product.find()
         .skip(skip) // Skip the first N results
         .limit(limit) // Limit the number of results
-        .sort({ createdAt: -1 }) 
-        .populate('category', 'name') 
-        .populate('brand', 'name'); 
-
-      // Total count for all products
+        .sort(sortQuery) // Sort based on the dynamic sort object
+        .populate('category', 'name')
+        .populate('brand', 'name');
+  
+      // Get the total count of products for pagination info
       const total = await Product.countDocuments();
-
-      // Send the response
+  
+      // Send the response with paginated products and pagination info
       res.status(200).json({
         products,
         total,
@@ -56,6 +68,9 @@ class ProductController {
       res.status(500).json({ message: err.message });
     }
   }
+  
+
+
 
   // Get single product
   async show(req, res) {
@@ -141,51 +156,51 @@ class ProductController {
   async deleteImage(req, res) {
     try {
       const { id, imageName } = req.params;
-  
+
       // Find the product by ID
       const product = await Product.findById(id);
       if (!product) {
         return res.status(404).json({ message: 'Product not found' });
       }
-  
+
       // Ensure the product has more than one image
       if (product.images.length <= 1) {
         return res.status(400).json({
           message: 'Cannot delete the last remaining image of the product.',
         });
       }
-  
+
       // Normalize the image path to use forward slashes
       const imagePath = `products/${imageName}`; // Use forward slashes
       const normalizedImages = product.images.map(image => image.replace(/\\/g, '/')); // Normalize all stored image paths
-  
+
       // console.log('Normalized Product Images:', normalizedImages); // Debug log
       // console.log('Image Path to Delete:', imagePath); // Debug log
-  
+
       const imageIndex = normalizedImages.findIndex(img => img === imagePath);
       if (imageIndex === -1) {
         return res.status(404).json({ message: 'Image not found in the product.' });
       }
-  
+
       // Remove the image from the images array
       product.images.splice(imageIndex, 1);
-  
+
       // Delete the image file from the public folder
       const fullImagePath = path.join(__dirname, '..', 'public', imagePath);
       console.log('Full Image Path:', fullImagePath); // Debug log
       if (fs.existsSync(fullImagePath)) {
         fs.unlinkSync(fullImagePath);
       }
-  
+
       // Save the product with the updated images array
       await product.save();
-  
+
       res.status(200).json({ message: 'Image deleted successfully', product });
     } catch (err) {
       res.status(500).json({ message: err.message });
     }
   }
-  
+
 
   async search(req, res) {
     try {
@@ -196,10 +211,10 @@ class ProductController {
       const products = await Product.find({
         name: { $regex: searchQuery, $options: 'i' }
       })
-        .populate('category') // Populate the category field
-        .populate('brand')    // Populate the brand field
-        .sort({ createdAt: -1 }) // Sort by creation date (newest first)
-        .limit(5); // Limit the result to 5
+        .populate('category')
+        .populate('brand')
+        .sort({ createdAt: -1 })
+        .limit(8);
 
       const total = await Product.countDocuments({
         name: { $regex: searchQuery, $options: 'i' }
