@@ -194,7 +194,7 @@ async destroy(req, res) {
 
       // Delete the image file from the public folder
       const fullImagePath = path.join(__dirname, '..', 'public', imagePath);
-      console.log('Full Image Path:', fullImagePath); // Debug log
+      // console.log('Full Image Path:', fullImagePath); // Debug log
       if (fs.existsSync(fullImagePath)) {
         fs.unlinkSync(fullImagePath);
       }
