@@ -1,4 +1,5 @@
 const Product = require('../models/Product'); // Product model
+const Cart = require("../models/Cart");
 const fs = require('fs');
 const path = require('path');
 
@@ -130,27 +131,33 @@ class ProductController {
   }
 
 
-  // Delete a product
-  async destroy(req, res) {
-    try {
-      const product = await Product.findById(req.params.id);
-      if (!product) {
-        return res.status(404).json({ message: 'Product not found' });
-      }
-
-      // Delete product images
-      // Correct path construction
-      product.images.forEach(imagePath => {
-        const fullImagePath = path.join(__dirname, '..', '..', 'public', imagePath);  // Adjust path to point to public folder
-        fs.unlinkSync(fullImagePath);  // Delete image file
-      });
-
-      await product.deleteOne();
-      res.status(200).json({ message: 'Product deleted successfully' });
-    } catch (err) {
-      res.status(500).json({ message: err.message });
+// Delete a product
+async destroy(req, res) {
+  try {
+    const product = await Product.findById(req.params.id);
+    if (!product) {
+      return res.status(404).json({ message: 'Product not found' });
     }
+
+    // Check if the product is in any cart
+    const productInCart = await Cart.findOne({ 'items.product': req.params.id });
+    if (productInCart) {
+      return res.status(400).json({ message: 'Cannot delete product as it exists in a cart.' });
+    }
+
+    // Delete product images
+    product.images.forEach((imagePath) => {
+      const fullImagePath = path.join(__dirname, '..', '..', 'public', imagePath);
+      fs.unlinkSync(fullImagePath);
+    });
+
+    await product.deleteOne();
+    res.status(200).json({ message: 'Product deleted successfully' });
+  } catch (err) {
+    res.status(500).json({ message: err.message });
   }
+}
+
 
   // Delete a single image from a product
   async deleteImage(req, res) {
