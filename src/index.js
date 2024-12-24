@@ -12,8 +12,7 @@ app.use(express.json());
 app.use(cors({
   credentials: true,
   origin: [
-    'http://localhost:3000', // for local development
-    'https://china-electronics-client.vercel.app', // for production
+    process.env.FRONTEND_URL
   ]
 }));
 app.use(express.urlencoded({ extended: true }));
