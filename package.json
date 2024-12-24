@@ -1,7 +1,7 @@
 {
-  "name": "electronics_server",
+  "name": "chair_shop_server",
   "version": "1.0.0",
-  "description": "server for china electronics",
+  "description": "server for the chair shop",
   "main": "index.js",
   "scripts": {
     "start": "node src/index.js",
