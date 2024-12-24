@@ -1,5 +1,6 @@
 const Product = require('../models/Product'); // Product model
 const Cart = require("../models/Cart");
+const Order = require('../models/Order');
 const fs = require('fs');
 const path = require('path');
 
@@ -32,9 +33,9 @@ class ProductController {
       const page = parseInt(req.query.page) || 1; // Default to page 1
       const limit = parseInt(req.query.limit) || 10; // Default to 10 items per page
       const sort = req.query.sort || 'def'; // Default to 'def' (latest products first)
-      
+
       let sortQuery = {};
-      
+
       // Determine sorting based on 'sort' query parameter
       if (sort === 'asc') {
         sortQuery = { price: 1 }; // Ascending order by price
@@ -43,10 +44,10 @@ class ProductController {
       } else {
         sortQuery = { createdAt: -1 }; // Default to sorting by createdAt (latest products first)
       }
-  
+
       // Calculate the number of items to skip for pagination
       const skip = (page - 1) * limit;
-  
+
       // Fetch paginated and sorted products
       const products = await Product.find()
         .skip(skip) // Skip the first N results
@@ -54,10 +55,10 @@ class ProductController {
         .sort(sortQuery) // Sort based on the dynamic sort object
         .populate('category', 'name')
         .populate('brand', 'name');
-  
+
       // Get the total count of products for pagination info
       const total = await Product.countDocuments();
-  
+
       // Send the response with paginated products and pagination info
       res.status(200).json({
         products,
@@ -69,7 +70,7 @@ class ProductController {
       res.status(500).json({ message: err.message });
     }
   }
-  
+
 
 
 
@@ -130,33 +131,43 @@ class ProductController {
     }
   }
 
+  //delete product
+  async destroy(req, res) {
+    try {
+      const productId = req.params.id;
 
-// Delete a product
-async destroy(req, res) {
-  try {
-    const product = await Product.findById(req.params.id);
-    if (!product) {
-      return res.status(404).json({ message: 'Product not found' });
+      // Check if the product exists
+      const product = await Product.findById(productId);
+      if (!product) {
+        return res.status(404).json({ message: 'Product not found' });
+      }
+
+      // Check if the product exists in any cart
+      const productInCart = await Cart.findOne({ 'items.product': productId });
+      if (productInCart) {
+        return res.status(400).json({ message: 'Cannot delete product as it exists in a cart.' });
+      }
+
+      // Check if the product exists in any order
+      const productInOrder = await Order.findOne({ 'items.product': productId });
+      if (productInOrder) {
+        return res.status(400).json({ message: 'Cannot delete product as it exists in an order.' });
+      }
+
+      // Delete product images
+      product.images.forEach((imagePath) => {
+        const fullImagePath = path.join(__dirname, '..', '..', 'public', imagePath);
+        fs.unlinkSync(fullImagePath);
+      });
+
+      // Delete the product
+      await product.deleteOne();
+      res.status(200).json({ message: 'Product deleted successfully' });
+    } catch (err) {
+      res.status(500).json({ message: err.message });
     }
-
-    // Check if the product is in any cart
-    const productInCart = await Cart.findOne({ 'items.product': req.params.id });
-    if (productInCart) {
-      return res.status(400).json({ message: 'Cannot delete product as it exists in a cart.' });
-    }
-
-    // Delete product images
-    product.images.forEach((imagePath) => {
-      const fullImagePath = path.join(__dirname, '..', '..', 'public', imagePath);
-      fs.unlinkSync(fullImagePath);
-    });
-
-    await product.deleteOne();
-    res.status(200).json({ message: 'Product deleted successfully' });
-  } catch (err) {
-    res.status(500).json({ message: err.message });
   }
-}
+
 
 
   // Delete a single image from a product
