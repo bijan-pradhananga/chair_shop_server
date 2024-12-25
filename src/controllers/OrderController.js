@@ -2,6 +2,9 @@
 const Cart = require('../models/Cart');
 const Product = require('../models/Product');
 const Order = require('../models/Order');
+const Payment = require('../models/Payment');
+const PController = require('../controllers/PaymentController');
+const pInstance = new PController();
 
 class OrderController {
 
@@ -37,19 +40,21 @@ class OrderController {
     }
 
 
+
     async createOrder(req, res) {
         try {
-            const { userId, billingInfo } = req.body; // Extract userid and billing info from request body
-
+            const { userId, billingInfo } = req.body; // Extract userId and billingInfo from request body
+    
             // Fetch the user's cart
             const cart = await Cart.findOne({ user: userId });
             if (!cart) return res.status(404).json({ message: 'Cart not found' });
-
+    
             const items = cart.items;
-            if (items.length == 0) return res.status(404).json({ message: 'No Products in cart' });
+            if (items.length === 0) return res.status(404).json({ message: 'No products in cart' });
+    
             let totalAmount = 0;
             const orderItems = [];
-
+    
             // Calculate total amount, prepare order items, and check product quantity
             for (const item of items) {
                 const product = await Product.findById(item.product);
@@ -61,6 +66,7 @@ class OrderController {
                         message: `Not enough stock for product: ${product.name}. Available: ${product.stock}`,
                     });
                 }
+    
                 const price = product.price;
                 totalAmount += price * item.quantity;
                 orderItems.push({
@@ -68,29 +74,57 @@ class OrderController {
                     quantity: item.quantity,
                     price,
                 });
-                // Decrease product quantity
+    
+                // Decrease product stock
                 product.stock -= item.quantity;
-                console.log();
-
                 await product.save();
             }
+    
             // Create a new order
             const newOrder = new Order({
                 user: userId,
                 items: orderItems,
                 status: 'Pending', // Initial status
                 totalAmount,
-                billingInfo, // Include billing info in the order
+                billingInfo,
             });
+    
             // Save the order
             await newOrder.save();
-            // Optionally, clear the cart after creating the order (if you want to empty the cart)
+    
+            // clear the cart after creating the order
             await Cart.deleteOne({ user: userId });
-            res.status(201).json({ message: 'Order created successfully', order: newOrder });
+    
+            // Handle payment
+            if (billingInfo.paymentMethod === 'Cash on Delivery') {
+                // Record the payment for COD
+                const payment = new Payment({
+                    orderId: newOrder._id,
+                    amount: totalAmount,
+                    paymentGateway: 'cash on delivery',
+                    status: 'pending', // Payment pending until cash is received
+                });
+                await payment.save();
+    
+                return res.status(201).json({ 
+                    message: 'Order created successfully with Cash on Delivery',
+                    order: newOrder,
+                    payment,
+                });
+            }
+    
+
+            if (billingInfo.paymentMethod === 'Esewa') {
+                return pInstance.initializePayment(newOrder, res); // Pass the order to payment initialization
+            }
+    
+            res.status(400).json({ message: 'Invalid payment method' });
         } catch (error) {
+            console.error(error);
             res.status(500).json({ message: 'Failed to create order', error });
         }
     }
+    
 
     // View all orders for a user use post
     async viewOrders(req, res) {
