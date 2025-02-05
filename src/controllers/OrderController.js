@@ -114,9 +114,12 @@ class OrderController {
             }
     
 
-            if (billingInfo.paymentMethod === 'Esewa') {
-                return pInstance.initializePayment(newOrder, res); // Pass the order to payment initialization
-            }
+            // if (billingInfo.paymentMethod === 'Esewa') {
+            //     return pInstance.initializeEsewaPayment(newOrder, res); // Pass the order to payment initialization
+            // }
+            // if (billingInfo.paymentMethod === 'Khalti') {
+            //     return pInstance.initializeKhaltiPayment(newOrder, res);
+            // }
     
             res.status(400).json({ message: 'Invalid payment method' });
         } catch (error) {

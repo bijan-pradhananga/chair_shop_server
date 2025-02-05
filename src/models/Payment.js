@@ -14,7 +14,7 @@ const paymentSchema = new mongoose.Schema(
     apiQueryFromUser: { type: Object }, // Optional for COD
     paymentGateway: {
       type: String,
-      enum: ['esewa', 'cash on delivery'],
+      enum: ['esewa', 'cash on delivery', 'khalti'],
       required: true,
     },
     status: {
